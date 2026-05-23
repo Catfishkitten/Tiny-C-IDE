@@ -1,0 +1,16 @@
+#Tiny C IDE Language config file
+menu.file = "文件"
+menu.new = "新建"
+menu.open = "打开"
+menu.save = "保存"
+menu.language = "语言"
+menu.setlanguage = "切换语言"
+menu.run = "运行"
+menu.compilerun = "编译并运行"
+menu.exit = "退出"
+gui.tkinter.title = "Tiny C IDE PRO"
+gui.tkinter.title.icon = "./icon.ico"
+gui.tkinter.label.output = "输出日志"
+gui.tkinter.output.success = "编译成功"
+gui.tkinter.output.failure = "编译失败"
+key.tab = 4

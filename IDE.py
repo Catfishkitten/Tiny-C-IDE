@@ -16,8 +16,10 @@ class TinyCIDEPRO:
         self.kw_colors = {}
         self.kw_list = []
         self.tab_size = 4
+
         self.load_keywords("Tips.tip")
         self.load_last_language()
+
         self.root.title(self.t("gui.tkinter.title"))
         try:
             self.root.iconbitmap(self.t("gui.tkinter.title.icon"))
@@ -30,6 +32,8 @@ class TinyCIDEPRO:
         self.build_ui()
         self.bind_hotkeys()
         self.highlight_all()
+
+    # ================= 记忆上次使用的语言 =================
     def load_last_language(self):
         try:
             if os.path.exists("lastlang.cfg"):
@@ -48,6 +52,8 @@ class TinyCIDEPRO:
                 f.write(path)
         except:
             pass
+
+    # ================= 多语言加载 =================
     def load_language(self, path):
         self.lang = {}
         try:
@@ -64,6 +70,8 @@ class TinyCIDEPRO:
 
     def t(self, key):
         return self.lang.get(key, key)
+
+    # ================= 关键字高亮 =================
     def load_keywords(self, path):
         try:
             with open(path, "r", encoding="utf-8") as f:
@@ -79,6 +87,7 @@ class TinyCIDEPRO:
         except:
             pass
 
+    # ================= 顶部折叠菜单 =================
     def build_menu(self):
         menubar = Menu(self.root, bg="#2B2B3B", fg="white", activebackground="#4A4A6A", font=("Segoe UI", 10))
         self.root.config(menu=menubar)
@@ -92,9 +101,12 @@ class TinyCIDEPRO:
         file_menu.add_separator()
         file_menu.add_command(label=self.t("menu.exit"), command=self.root.quit)
         menubar.add_cascade(label=self.t("menu.file"), menu=file_menu)
+
         run_menu = Menu(menubar, tearoff=0, bg="#333345", fg="white")
         run_menu.add_command(label=f"{self.t('menu.compilerun')} (F5)", command=self.compile_run)
         menubar.add_cascade(label=self.t("menu.run"), menu=run_menu)
+
+    # ================= 界面构建 =================
     def build_ui(self):
         for w in self.root.winfo_children():
             if not isinstance(w, Menu):
@@ -102,7 +114,8 @@ class TinyCIDEPRO:
 
         self.editor = scrolledtext.ScrolledText(
             self.root, font=("Consolas", 11), wrap=tk.WORD,
-            bg="#2D2D3F", fg="#E2E8F0", insertbackground="white"
+            bg="#2D2D3F", fg="#E2E8F0", insertbackground="white",
+            undo=True, maxundo=100
         )
         self.editor.pack(fill=tk.BOTH, expand=True, padx=12, pady=6)
         self.editor.insert("end", '// Tiny C IDE\n#include <stdio.h>\nint main(){\n    printf("Hello\\n");\n    return 0;\n}')
@@ -125,18 +138,40 @@ class TinyCIDEPRO:
         )
         self.ac_list.pack()
         self.ac_frame.place_forget()
+
+    # ================= 安全撤销 / 重做 =================
+    def undo(self):
+        try:
+            self.editor.edit_undo()
+        except:
+            pass
+
+    def redo(self):
+        try:
+            self.editor.edit_redo()
+        except:
+            pass
+
+    # ================= 快捷键 =================
     def bind_hotkeys(self):
         self.editor.bind("<KeyRelease>", self.on_type)
         self.editor.bind("<Tab>", self.do_tab)
         self.ac_list.bind("<ButtonRelease-1>", self.confirm_select)
         self.ac_list.bind("<Return>", self.confirm_select)
+
         self.root.bind("<F5>", lambda e: self.compile_run())
         self.root.bind("<Control-n>", lambda e: self.new_file())
         self.root.bind("<Control-o>", lambda e: self.open_file())
         self.root.bind("<Control-s>", lambda e: self.save_file())
+        self.root.bind("<Control-z>", lambda e: self.undo())
+        self.root.bind("<Control-y>", lambda e: self.redo())
+
+    # ================= Tab 4空格 =================
     def do_tab(self, e):
         self.editor.insert(tk.INSERT, " " * self.tab_size)
         return "break"
+
+    # ================= 自动补全 =================
     def on_type(self, e):
         self.highlight_all()
         self.update_autocomplete()
@@ -181,6 +216,8 @@ class TinyCIDEPRO:
         except:
             pass
         return "break"
+
+    # ================= 语法高亮 =================
     def highlight_all(self):
         for tag in self.editor.tag_names():
             self.editor.tag_remove(tag, "1.0", tk.END)
@@ -200,6 +237,7 @@ class TinyCIDEPRO:
             self.editor.tag_add("string", f"1.0+{m.start()}c", f"1.0+{m.end()}c")
             self.editor.tag_config("string", foreground="#70D670")
 
+    # ================= 文件操作 =================
     def new_file(self):
         self.editor.delete("1.0", tk.END)
         self.current_file = ""
@@ -229,11 +267,13 @@ class TinyCIDEPRO:
             self.build_menu()
             self.build_ui()
             self.highlight_all()
+
+    # ================= 编译运行 =================
     def compile_run(self):
         self.save_file()
         self.output.delete("1.0", tk.END)
         if not self.current_file:
-            self.output.insert("end", "请先保存文件")
+            self.output.insert("end", "Please save first")
             return
 
         exe = self.current_file.replace(".c", ".exe")
